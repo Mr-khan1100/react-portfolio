@@ -4,7 +4,7 @@ import { FiChevronLeft, FiChevronRight, FiExternalLink, FiDownload, FiX } from '
 import Slider from 'react-slick'
 import { usePortfolioData } from '../hooks/usePortfolioData'
 
-// Local image fallbacks
+// ── Local image fallbacks (used when Supabase image_urls are empty) ──────────
 import dashboard1 from '../assets/images/Dashboard1.png'
 import dashboard2 from '../assets/images/Dashboard2.png'
 import dashboard3 from '../assets/images/Dashboard3.png'
@@ -24,42 +24,34 @@ import Form1 from '../assets/images/Form1.jpeg'
 import Form2 from '../assets/images/Form2.jpeg'
 import Form3 from '../assets/images/Form3.jpeg'
 import Form4 from '../assets/images/Form4.jpeg'
-import FreshNewsApk from '../assets/apk/Fresh-news.apk'
-import QuickHrApk from '../assets/apk/QuickHr.apk'
-import EmployeeFormApk from '../assets/apk/Employee-Form.apk'
 
-// Fallback images per project id
 const LOCAL_IMAGES = {
-  1: [dashboard1, dashboard2, dashboard3],
-  2: [freshLogo, FreshNewsImg1, FreshNewsImg2, FreshNewsImg3, FreshNewsImg4, FreshNewsImg5],
-  3: [QuickHrLogo, QuickHr1, QuickHr2, QuickHr3, QuickHr4],
-  4: [formsLogo, Form1, Form2, Form3, Form4],
+  'Sales Dashboard':         [dashboard1, dashboard2, dashboard3],
+  'Fresh News':              [freshLogo, FreshNewsImg1, FreshNewsImg2, FreshNewsImg3, FreshNewsImg4, FreshNewsImg5],
+  'HRMS – Leave Management': [QuickHrLogo, QuickHr1, QuickHr2, QuickHr3, QuickHr4],
+  'Employee Form App':       [formsLogo, Form1, Form2, Form3, Form4],
 }
 
-const LOCAL_APKS = {
-  2: { path: FreshNewsApk, filename: 'Fresh-News.apk' },
-  3: { path: QuickHrApk, filename: 'QuickHr.apk' },
-  4: { path: EmployeeFormApk, filename: 'Employee-Form.apk' },
+// ── Play Store icon SVG ───────────────────────────────────────────────────────
+function PlayStoreIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 512 512" fill="currentColor">
+      <path d="M325.3 234.3L104.6 13l280.8 161.2-60.1 60.1zM47 0C34 6.8 25.3 19.2 25.3 35.3v441.3c0 16.1 8.7 28.5 21.7 35.3l2.7 1.5 246.9-246.9v-5.8L47 0zm301.6 319.5l-82.3-82.3v-5.8l82.3-82.3 18.3 10.5 97.7 55.5c27.9 15.8 27.9 41.8 0 57.7l-97.7 55.5-18.3 10.5zm-219.2 80.7L373.5 279.5l-51.5-51.5L47 512l82.4-111.8z"/>
+    </svg>
+  )
 }
 
+// ── Carousel arrow ────────────────────────────────────────────────────────────
 function Arrow({ dir, onClick }) {
   return (
-    <div style={{
-      position: 'absolute',
-      [dir === 'next' ? 'right' : 'left']: 8,
-      top: '50%', transform: 'translateY(-50%)',
-      zIndex: 10,
-    }}>
+    <div style={{ position: 'absolute', [dir === 'next' ? 'right' : 'left']: 8, top: '50%', transform: 'translateY(-50%)', zIndex: 10 }}>
       <button
         onClick={onClick}
         style={{
           width: 36, height: 36, borderRadius: '50%',
-          background: 'var(--surface)',
-          border: '1px solid var(--border)',
+          background: 'var(--surface)', border: '1px solid var(--border)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--text-primary)',
-          cursor: 'pointer',
-          transition: 'border-color 0.2s',
+          color: 'var(--text-primary)', cursor: 'pointer', transition: 'border-color 0.2s',
         }}
         onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--border-hover)'}
         onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
@@ -70,23 +62,118 @@ function Arrow({ dir, onClick }) {
   )
 }
 
+// ── Project action buttons ────────────────────────────────────────────────────
+// Priority: APK download > Play Store > Live site
+// If none → no button shown
+function ProjectActions({ project }) {
+  const { apk, playstore_url, url } = project
+
+  // APK download (local bundle, always available for the 3 mobile apps)
+  if (apk) {
+    return (
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <a
+          href={apk.path}
+          download={apk.filename}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '10px 20px', borderRadius: 999,
+            background: 'var(--accent)', color: '#0a0a0a',
+            fontFamily: 'Syne', fontWeight: 700, fontSize: '0.85rem',
+            textDecoration: 'none', transition: 'transform 0.2s, box-shadow 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 20px rgba(200,241,53,0.3)' }}
+          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '' }}
+        >
+          <FiDownload size={15} /> Download APK
+        </a>
+
+        {/* Also show Play Store link alongside APK if available */}
+        {playstore_url && (
+          <a
+            href={playstore_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 20px', borderRadius: 999,
+              border: '1px solid var(--border)', color: 'var(--text-secondary)',
+              fontFamily: 'Syne', fontWeight: 600, fontSize: '0.85rem',
+              textDecoration: 'none', transition: 'border-color 0.2s, color 0.2s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#01875f'; e.currentTarget.style.color = '#01875f' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+          >
+            <PlayStoreIcon /> Play Store
+          </a>
+        )}
+      </div>
+    )
+  }
+
+  // Play Store only (future — once published, add playstore_url in Supabase)
+  if (playstore_url) {
+    return (
+      <a
+        href={playstore_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 20px', borderRadius: 999,
+          background: '#01875f', color: '#fff',
+          fontFamily: 'Syne', fontWeight: 700, fontSize: '0.85rem',
+          textDecoration: 'none', transition: 'opacity 0.2s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+      >
+        <PlayStoreIcon /> View on Play Store
+      </a>
+    )
+  }
+
+  // Live website (web projects like Sales Dashboard)
+  if (url) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          padding: '10px 20px', borderRadius: 999,
+          border: '1px solid var(--border)', color: 'var(--text-primary)',
+          fontFamily: 'Syne', fontWeight: 600, fontSize: '0.85rem',
+          textDecoration: 'none', transition: 'border-color 0.2s',
+        }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
+      >
+        <FiExternalLink size={15} /> Open Site
+      </a>
+    )
+  }
+
+  return null
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export default function Projects() {
-  const { projects, loading } = usePortfolioData()
+  const { projects } = usePortfolioData()
   const [selectedProject, setSelectedProject] = useState(null)
   const [activeSlide, setActiveSlide] = useState(0)
   const [activeDot, setActiveDot] = useState(0)
   const [popupDot, setPopupDot] = useState(0)
   const sliderRef = useRef(null)
 
+  // Merge Supabase data with local image fallbacks
   const projectsData = (projects || []).map(p => ({
     ...p,
-    images: p.image_urls?.length > 0 ? p.image_urls : (LOCAL_IMAGES[p.id] || []),
-    apk: p.apk_url
-      ? { path: p.apk_url, filename: p.apk_filename }
-      : (LOCAL_APKS[p.id] || null),
+    images: p.image_urls?.length > 0 ? p.image_urls : (LOCAL_IMAGES[p.title] || []),
   }))
 
-  const settings = {
+  const carouselSettings = {
     infinite: true,
     centerMode: true,
     centerPadding: '0px',
@@ -101,8 +188,7 @@ export default function Projects() {
     afterChange: i => setActiveSlide(i),
     customPaging: i => (
       <div style={{
-        width: i === activeDot ? 20 : 8, height: 8,
-        borderRadius: 999,
+        width: i === activeDot ? 20 : 8, height: 8, borderRadius: 999,
         background: i === activeDot ? 'var(--accent)' : 'var(--border)',
         transition: 'width 0.3s, background 0.3s',
       }} />
@@ -124,7 +210,8 @@ export default function Projects() {
           <h1 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', color: 'var(--text-primary)' }}>My Work</h1>
         </motion.div>
 
-        <Slider ref={sliderRef} {...settings}>
+        {/* Carousel */}
+        <Slider ref={sliderRef} {...carouselSettings}>
           {projectsData.map((project, idx) => (
             <motion.div
               key={project.id}
@@ -138,11 +225,13 @@ export default function Projects() {
             >
               <div className="project-card">
                 <div style={{ height: 200, overflow: 'hidden', background: 'var(--surface-2)' }}>
-                  <img
-                    src={project.images[0]}
-                    alt={project.title}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }}
-                  />
+                  {project.images[0] && (
+                    <img
+                      src={project.images[0]}
+                      alt={project.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  )}
                 </div>
                 <div style={{ padding: '20px 24px' }}>
                   <h3 style={{ fontFamily: 'Syne', fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)', marginBottom: 10 }}>
@@ -168,8 +257,7 @@ export default function Projects() {
               exit={{ opacity: 0 }}
               style={{
                 position: 'fixed', inset: 0,
-                background: 'rgba(0,0,0,0.75)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(12px)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: 16, zIndex: 100,
               }}
@@ -182,21 +270,21 @@ export default function Projects() {
                 transition={{ type: 'spring', stiffness: 300, damping: 28 }}
                 onClick={e => e.stopPropagation()}
                 style={{
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: 'var(--radius-lg)',
-                  width: '100%', maxWidth: 640,
+                  background: 'var(--surface)', border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)', width: '100%', maxWidth: 640,
                   maxHeight: '90vh', overflow: 'auto',
                 }}
               >
                 {/* Header */}
                 <div style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
                   padding: '24px 28px', borderBottom: '1px solid var(--border)',
                 }}>
                   <div>
-                    <h3 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.3rem', color: 'var(--text-primary)' }}>{selectedProject.title}</h3>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
+                    <h3 style={{ fontFamily: 'Syne', fontWeight: 800, fontSize: '1.3rem', color: 'var(--text-primary)', marginBottom: 10 }}>
+                      {selectedProject.title}
+                    </h3>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {(selectedProject.tags || []).map(tag => <span key={tag} className="tag">{tag}</span>)}
                     </div>
                   </div>
@@ -204,9 +292,9 @@ export default function Projects() {
                     onClick={() => setSelectedProject(null)}
                     style={{
                       background: 'var(--surface-2)', border: '1px solid var(--border)',
-                      borderRadius: 10, width: 36, height: 36,
+                      borderRadius: 10, width: 36, height: 36, flexShrink: 0,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      color: 'var(--text-secondary)', cursor: 'pointer',
+                      color: 'var(--text-secondary)', cursor: 'pointer', marginLeft: 12,
                     }}
                   >
                     <FiX size={16} />
@@ -214,7 +302,7 @@ export default function Projects() {
                 </div>
 
                 {/* Image slider */}
-                <div style={{ padding: '24px 28px', paddingBottom: 12 }}>
+                <div style={{ padding: '24px 28px 8px' }}>
                   <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', background: 'var(--surface-2)', position: 'relative' }}>
                     <Slider
                       infinite={false}
@@ -226,21 +314,24 @@ export default function Projects() {
                       beforeChange={(_, i) => setPopupDot(i)}
                       customPaging={i => (
                         <div style={{
-                          width: i === popupDot ? 16 : 6, height: 6,
-                          borderRadius: 999,
+                          width: i === popupDot ? 16 : 6, height: 6, borderRadius: 999,
                           background: i === popupDot ? 'var(--accent)' : 'var(--border)',
                           transition: 'width 0.3s',
                         }} />
                       )}
                       appendDots={dots => (
-                        <div style={{ marginTop: 8, paddingBottom: 8 }}>
-                          <ul style={{ display: 'flex', gap: 4, justifyContent: 'center', listStyle: 'none', padding: 0 }}>{dots}</ul>
+                        <div style={{ paddingBottom: 10 }}>
+                          <ul style={{ display: 'flex', gap: 4, justifyContent: 'center', listStyle: 'none', padding: 0, marginTop: 8 }}>{dots}</ul>
                         </div>
                       )}
                     >
                       {selectedProject.images.map((src, i) => (
-                        <div key={i} style={{ padding: '0 2px' }}>
-                          <img src={src} alt={`${selectedProject.title} ${i}`} style={{ width: '100%', height: 280, objectFit: 'contain', borderRadius: 'var(--radius)', background: 'var(--surface-2)' }} />
+                        <div key={i}>
+                          <img
+                            src={src}
+                            alt={`${selectedProject.title} ${i}`}
+                            style={{ width: '100%', height: 280, objectFit: 'contain', background: 'var(--surface-2)' }}
+                          />
                         </div>
                       ))}
                     </Slider>
@@ -248,52 +339,17 @@ export default function Projects() {
                 </div>
 
                 {/* Body */}
-                <div style={{ padding: '12px 28px 28px' }}>
+                <div style={{ padding: '16px 28px 28px' }}>
                   <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.7, marginBottom: 24 }}>
                     {selectedProject.description}
                   </p>
-                  <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                    {selectedProject.apk && (
-                      <a
-                        href={selectedProject.apk.path}
-                        download={selectedProject.apk.filename}
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 8,
-                          padding: '10px 20px', borderRadius: 999,
-                          background: 'var(--accent)', color: '#0a0a0a',
-                          fontFamily: 'Syne', fontWeight: 700, fontSize: '0.85rem',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        <FiDownload size={15} /> Download APK
-                      </a>
-                    )}
-                    {selectedProject.url && (
-                      <a
-                        href={selectedProject.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex', alignItems: 'center', gap: 8,
-                          padding: '10px 20px', borderRadius: 999,
-                          border: '1px solid var(--border)',
-                          color: 'var(--text-primary)',
-                          fontFamily: 'Syne', fontWeight: 600, fontSize: '0.85rem',
-                          textDecoration: 'none',
-                          transition: 'border-color 0.2s',
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border)'}
-                      >
-                        <FiExternalLink size={15} /> Visit Site
-                      </a>
-                    )}
-                  </div>
+                  <ProjectActions project={selectedProject} />
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
+
       </div>
     </section>
   )
