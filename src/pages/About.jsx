@@ -2,7 +2,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useState } from 'react'
 import {
   SiJavascript, SiReact, SiNodedotjs, SiPython,
-  SiMongodb, SiGit, SiMysql, SiFirebase, SiHtml5, SiCss3
+  SiMongodb, SiGit, SiMysql, SiFirebase, SiHtml5, SiCss3, SiSupabase,
+  SiPostgresql
 } from 'react-icons/si'
 import { usePortfolioData } from '../hooks/usePortfolioData'
 import UniversityLogoFallback from '../assets/images/UniversityLogo.png'
@@ -18,6 +19,8 @@ const ICON_MAP = {
   SiFirebase: <SiFirebase />,
   SiHtml5: <SiHtml5 />,
   SiCss3: <SiCss3 />,
+  SiSupabase: <SiSupabase />,
+  SiPostgresql: <SiPostgresql />
 }
 
 export default function About() {
